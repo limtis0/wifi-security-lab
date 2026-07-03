@@ -1,0 +1,85 @@
+services:
+  base:
+    build:
+      context: .
+      dockerfile: images/base/Dockerfile
+    image: wifi-lab-base
+    entrypoint: ["true"]
+    restart: "no"
+
+  builder:
+    build:
+      context: .
+      dockerfile: images/hostap-builder/Dockerfile
+    image: wifi-lab-builder
+    entrypoint: ["true"]
+    restart: "no"
+
+  ap:
+    build:
+      context: .
+      dockerfile: images/ap/Dockerfile
+    image: wifi-lab-ap
+    container_name: wifi-lab-ap
+    privileged: true
+    pid: host
+    network_mode: none
+    volumes:
+      - ./config/hostapd:/etc/hostapd:ro
+      - ./results:/results
+    environment:
+      - IFACE=${AP_IFACE:-wlan0}
+      - PHY=${AP_PHY:-phy0}
+      - IP_ADDR=192.168.42.1/24
+      - HOSTAPD_CONF=${HOSTAPD_CONF:-/etc/hostapd/hostapd_sae.conf}
+      - SAE_ITERATION_DELAY_US=${SAE_ITERATION_DELAY_US:-3000}
+    depends_on:
+      - builder
+    restart: "no"
+
+  client:
+    build:
+      context: .
+      dockerfile: images/client/Dockerfile
+    image: wifi-lab-client
+    container_name: wifi-lab-client
+    privileged: true
+    pid: host
+    network_mode: none
+    volumes:
+      - ./config/wpa_supplicant:/etc/wpa_supplicant:ro
+      - ./results:/results
+    environment:
+      - IFACE=${CLIENT_IFACE:-wlan1}
+      - PHY=${CLIENT_PHY:-phy1}
+      - IP_ADDR=192.168.42.2/24
+      - WPA_SUPPLICANT_CONF=${WPA_SUPPLICANT_CONF:-/etc/wpa_supplicant/wpa_supplicant_sae.conf}
+    depends_on:
+      - builder
+      - ap
+    restart: "no"
+
+  attacker:
+    build:
+      context: .
+      dockerfile: images/attacker/Dockerfile
+    image: wifi-lab-attacker
+    container_name: wifi-lab-attacker
+    privileged: true
+    pid: host
+    network_mode: host
+    volumes:
+      - ./attacks:/opt/attacks
+      - ./notebooks:/opt/notebooks
+      - ./results:/results
+    environment:
+      - IFACE=${ATTACKER_IFACE:-wlan2}
+      - PHY=${ATTACKER_PHY:-phy2}
+      - ATTACK_CMD=${ATTACK_CMD:-}
+      - JUPYTER=${JUPYTER:-false}
+    stdin_open: true
+    tty: true
+    depends_on:
+      - ap
+      - client
+    restart: "no"

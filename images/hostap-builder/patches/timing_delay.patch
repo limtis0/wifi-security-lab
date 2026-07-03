@@ -1,0 +1,28 @@
+--- a/src/common/sae.c
++++ b/src/common/sae.c
+@@ -10,6 +10,8 @@
+ #include "includes.h"
+
+ #include "common.h"
++#include <stdlib.h>
++#include <unistd.h>
+ #include "crypto/crypto.h"
+ #include "crypto/sha256.h"
+ #include "crypto/random.h"
+@@ -340,6 +342,16 @@ static int sae_derive_pwe_ecc(struct sae_data *sae, const u8 *addr1,
+ 		if (hmac_sha256_vector(addrs, sizeof(addrs), 2, addr, len,
+ 				       pwd_seed) < 0)
+ 			break;
++
++		{
++			static int delay_us = -1;
++			if (delay_us < 0) {
++				const char *env = getenv("SAE_ITERATION_DELAY_US");
++				delay_us = env ? atoi(env) : 3000;
++			}
++			usleep(delay_us);
++		}
++
+ 		res = sae_test_pwd_seed_ecc(sae, pwd_seed,
+ 					    found ? pwe_tmp :
+ 					    sae->tmp->pwe_ecc);

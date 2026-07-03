@@ -1,0 +1,4 @@
+services:
+  ap:
+    environment:
+      - HOSTAPD_CONF=/etc/hostapd/hostapd_sae_transition.conf

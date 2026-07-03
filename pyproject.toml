@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wifi-security-lab"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "scapy",
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "pandas",
+    "tqdm",
+]
+
+[project.scripts]
+timing-attack = "attacks.dragonblood.timing_sidechannel:main"
+downgrade-attack = "attacks.dragonblood.downgrade:main"
+recovery-attack = "attacks.dragonblood.password_recovery:main"
+live-recovery = "attacks.dragonblood.live_recovery:main"
+
+[tool.setuptools.packages.find]
+include = ["attacks*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: requires MockWirelessBackend (runs locally)",
+    "e2e: requires running Docker lab with mac80211_hwsim",
+]
